@@ -13,25 +13,35 @@ button.addEventListener('click', function(){
     form.addEventListener('submit', function(e) {e.preventDefault()}, false)
     json_data = toJSONString(form)
     console.log(json_data);
-    socket.emit('join_player', json_data)
+    socket.emit('join player', json_data)
 }, false)
 
 
 socket.on('user update', function(msg) {
     console.log(msg)
-    window.alert(msg)
+    document.getElementById('player-joined').innerHTML = msg
     // window.location="http://www.tutorialspoint.com"
 })
 
 
-socket.on('users joined', function(msg) {
-    console.log(msg[0])
-    console.log(msg[1])
-    console.log(msg[2])
-    window.alert(msg[0])
+socket.on('users joined', function(client_details) {
+    console.log(client_details[0])
+    console.log(client_details[1])
+    console.log(client_details[2])
+    // window.alert(client_details[0])
+    document.getElementById('player-joined').innerHTML = client_details[0]
     var x = document.getElementById("playgame");
     x.style.display = "block";
-    socket.emit('select player', msg[1:])
+    socket.emit('select player', client_details.slice(1))
+})
+
+
+socket.on('display', function(player_details) {
+    display_msg = 'Player1 is ' + player_details[0]["player1"] + ' and Player2 is ' + player_details[0]["player2"]
+    window.alert(display_msg)
+    // player_details[0]
+    // player_details[1]
+    // player_details[2]
 })
 
 
