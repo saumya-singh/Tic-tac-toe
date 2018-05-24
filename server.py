@@ -19,53 +19,62 @@ def join_player(player_id):
     player = json.loads(player_id)
     username = player['username']
     room = player['id']
-    join_room(room)
     if room not in players_connected:
-        print("one player added")
-        players_connected[room] = {username: request.sid}
+        join_room(room)
+        print("**first player added**")
+        players_connected[room] = {request.sid: username}
+        print("=============Room Info: ", players_connected)
         emit('user update', username + ' has joined the room.', room=room)
-    elif len(players_connected) == 1:
-        print("second player added")
-        players_connected[room].update({username: request.sid})
+    elif len(players_connected[room]) == 1:
+        join_room(room)
+        print("**second player added**")
+        players_connected[room].update({request.sid: username})
+        print("=============Room Info: ", players_connected)
         emit('users joined', [username + ' has joined the room.', room, players_connected[room]], room=room)
+    elif len(players_connected[room]) >= 2:
+        emit('connection not established','There are already two people joined, you are not allowed to connect', room=request.sid)
+
 
 
 @socketio.on('play game')
 def play_game(details):
     active_player = next(myIterator)
-    active_player_name = details[2]["player" + active_player]
-    active_player_sid = details[1][active_player_name]
-    sid_list = list(details[2].keys())
-    sid_list.remove(active_player_sid)
-    disable_player_sid = sid_list.pop()
-    status_dict = {"active": active_player_sid, "disable": disable_player_sid}
+    print("*****************************************", active_player)
+    disable_player = 3 - active_player
+    active_player_sid = details[2]["player" + str(active_player)][1]
+    disable_player_sid = details[2]["player" + str(disable_player)][1]
+    status_dict = {"active": [active_player_sid, active_player],
+                   "disable": [disable_player_sid, disable_player]}
     details.append(status_dict)
-    emit('playgame active disable', details)
+    emit('playgame active', details, room=active_player_sid)
+    emit('playgame disable', details, room=disable_player_sid)
 
 
 response = {}
 @socketio.on('store response')
 def store_response(details):
-    player1_name = details[2]["player1"]
-    player2_name = details[2]["player2"]
-    active = details[1][player1_name]
-    disable = details[1][player2_name]
+    print("store response details: ", details)
+    message = "Player{0} has marked at position {1}".format(details[0][3]["active"][1], details[1]["cellnumber"])
+    emit('move msg', message, room=details[0][0])
+    active = details[0][3]["active"][0]
+    disable = details[0][3]["disable"][0]
     print("active: ", active)
     print("disable: ", disable)
     print("request_sid: ", request.sid)
     if request.sid == active:
         if active not in response:
-            response[active] = [details[-1]["cellnumber"]]
+            response[active] = [details[1]["cellnumber"]]
         else:
-            response[active].append(details[-1]["cellnumber"])
+            response[active].append(details[1]["cellnumber"])
             if len(response[active]) >= 3:
                 answer = check_for_winner(response[active])
-        print("==entered==")
-    emit('display msg', [active, disable])
+                emit('display msg', [details, answer])
+    else:
+        emit('wrong turn', 'Not your turn', room=request.sid)
 
 
 def check_for_winner(active_list):
-    pass
+    return "false"
 
 
 if __name__ == '__main__':
