@@ -20,7 +20,6 @@ button.addEventListener('click', function(){
 socket.on('user update', function(msg) {
     console.log(msg)
     document.getElementById('player-joined').innerHTML = msg
-    // window.location="http://www.tutorialspoint.com"
 })
 
 
@@ -28,21 +27,50 @@ socket.on('users joined', function(client_details) {
     console.log(client_details[0])
     console.log(client_details[1])
     console.log(client_details[2])
-    // window.alert(client_details[0])
+    msg = decidePlayers(client_details[2])
     document.getElementById('player-joined').innerHTML = client_details[0]
-    var x = document.getElementById("playgame");
-    x.style.display = "block";
-    socket.emit('select player', client_details.slice(1))
+    var x = document.getElementById("playgame")
+    x.style.display = "block"
+    document.getElementById('player-role').innerHTML = msg[0]
+    details = client_details.slice(1)
+    details.push(msg[1])
+    console.log("just before")
+    console.log(details);
+    socket.emit('play game', details)
 })
 
 
-socket.on('display', function(player_details) {
-    display_msg = 'Player1 is ' + player_details[0]["player1"] + ' and Player2 is ' + player_details[0]["player2"]
-    window.alert(display_msg)
-    // player_details[0]
-    // player_details[1]
-    // player_details[2]
+function chanceMarkup(info) {
+    var chanceMarkup = `<p class = "player-chance">Player ${info[0]} placed mark on cell number ${info[1]}.</p>`
+    return chanceMarkup
+}
+
+
+socket.on('playgame active disable', function(details) {
+    console.log('inside playgame');
+    var button = document.getElementById('selectionButton')
+    console.log(button.id)
+    button.addEventListener('click', function(){
+        var form = document.getElementById('playgame');
+        form.addEventListener('submit', function(e) {e.preventDefault()}, false)
+        json_data = toJSONString(form)
+        details.push(JSON.parse(json_data))
+        console.log(json_data) ////////////////
+        console.log(details)
+        chanceMarkup()
+        socket.emit('store response', details)
+    }, false)
 })
+
+
+function decidePlayers(clientsInRoom){
+    clientList = Object.keys(clientsInRoom)
+    player1 = clientList[0]
+    player2 = clientList[1]
+    player_details = {"player1": player1, "player2": player2}
+    display_msg = 'Player1 is ' + player1 + ' and Player2 is ' + player2
+    return [display_msg, player_details]
+}
 
 
 function toJSONString(form) {
