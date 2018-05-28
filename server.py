@@ -6,7 +6,7 @@ import json
 app = Flask(__name__)
 socketio = SocketIO(app)
 players_connected = {}
-# myIterator = cycle(range(1, 3))
+myIterator = cycle(range(1, 3))
 
 
 @app.route('/')
